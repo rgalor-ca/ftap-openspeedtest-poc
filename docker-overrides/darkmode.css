@@ -1,0 +1,51 @@
+html,
+body,
+.openSpeedtestApp,
+#OpenSpeedTest-UI {
+  background-color: #181818;
+}
+#ipDesk {
+  fill: aliceblue;
+}
+
+.oDo-Meter {
+  fill: #d1d5db;
+}
+.oDoLive-Speed {
+  fill: #ffffff;
+}
+.oDoLive-Status {
+  fill: #ffffff;
+}
+#ipMob {
+  fill: aliceblue;
+}
+.rtextnum {
+  fill: #ffffff;
+}
+.rtextmbms {
+  fill: #ffffff;
+}
+.rtext {
+  fill: #ffffff;
+}
+.Cards {
+  fill: #000000;
+}
+
+.main-Gaugebg {
+  stroke: #e5e7eb;
+}
+.uiBg {
+  fill: #d1d5db;
+}
+.progressbg {
+  stroke: #4b5563;
+}
+.jitter-Mob {
+  fill: #e5e7eb;
+}
+
+.ConnectError {
+  fill: #ffffff;
+}

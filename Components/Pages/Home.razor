@@ -1,0 +1,194 @@
+@page "/"
+
+<PageTitle>FTAP OpenSpeedTest POC</PageTitle>
+
+<main class="@AppThemeClass">
+    <header class="speed-header">
+        <div class="title-block">
+            <h1>FTAP OpenSpeedTest POC</h1>
+            <p>Hybrid .NET MAUI Mobile App</p>
+        </div>
+
+        <div class="header-tools">
+            <div class="compact-controls" aria-label="Speed test controls">
+                <button type="button"
+                        class="@GetModeClass(SpeedTestMode.Managed)"
+                        title="Managed"
+                        aria-label="Use managed OpenSpeedTest"
+                        @onclick="UseManaged">
+                    <svg class="control-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M17.5 18H8a5 5 0 1 1 1.2-9.85 6.5 6.5 0 0 1 12.2 3.35A3.25 3.25 0 0 1 17.5 18Z" />
+                    </svg>
+                </button>
+                <button type="button"
+                        class="@GetModeClass(SpeedTestMode.Custom)"
+                        title="Custom"
+                        aria-label="Use custom OpenSpeedTest server"
+                        @onclick="UseCustom">
+                    <svg class="control-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 5h16v5H4V5Zm0 9h16v5H4v-5Z" />
+                        <path d="M7 7.5h.01M7 16.5h.01M16 7.5h1.5M16 16.5h1.5" />
+                    </svg>
+                </button>
+                <button type="button"
+                        class="control-button"
+                        title="Reload / start"
+                        aria-label="Reload and start speed test"
+                        @onclick="StartTest">
+                    <svg class="control-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M20 12a8 8 0 1 1-2.35-5.65" />
+                        <path d="M20 4v5h-5" />
+                    </svg>
+                </button>
+                <button type="button"
+                        class="control-button"
+                        title="@ThemeToggleLabel"
+                        aria-label="@ThemeToggleLabel"
+                        @onclick="ToggleTheme">
+                    @if (isDarkTheme)
+                    {
+                        <svg class="control-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8Z" />
+                        </svg>
+                    }
+                    else
+                    {
+                        <svg class="control-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="12" cy="12" r="4" />
+                            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+                        </svg>
+                    }
+                </button>
+            </div>
+        </div>
+    </header>
+
+    @if (mode == SpeedTestMode.Custom)
+    {
+        <section class="server-panel" aria-label="Custom speed test server">
+            <label class="server-field">
+                <span>Server URL</span>
+                <input @bind="customServerUrl"
+                       @bind:event="oninput"
+                       placeholder="http://10.0.2.2:3000"
+                       inputmode="url" />
+            </label>
+        </section>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(validationMessage))
+    {
+        <p class="validation-message">@validationMessage</p>
+    }
+
+    <section class="test-frame-shell" aria-label="OpenSpeedTest runner">
+        <iframe @key="frameKey"
+                title="OpenSpeedTest runner"
+                src="@frameUrl"
+                allow="fullscreen"
+                loading="eager"></iframe>
+    </section>
+</main>
+
+@code {
+    private const string ManagedSpeedTestUrl = "http://10.0.2.2:3000";
+
+    private SpeedTestMode mode = SpeedTestMode.Managed;
+    private string customServerUrl = "http://10.0.2.2:3000";
+    private string frameUrl = BuildFrameUrl(ManagedSpeedTestUrl, 0, run: true, darkTheme: true);
+    private string? validationMessage;
+    private int frameKey;
+    private bool isDarkTheme = true;
+
+    private string AppThemeClass => isDarkTheme ? "speed-app dark" : "speed-app";
+    private string ThemeToggleLabel => isDarkTheme ? "Switch to light theme" : "Switch to dark theme";
+
+    private enum SpeedTestMode
+    {
+        Managed,
+        Custom
+    }
+
+    private void UseManaged()
+    {
+        mode = SpeedTestMode.Managed;
+        StartTest();
+    }
+
+    private void UseCustom()
+    {
+        mode = SpeedTestMode.Custom;
+        validationMessage = null;
+    }
+
+    private void StartTest()
+    {
+        var requestedUrl = mode == SpeedTestMode.Managed ? ManagedSpeedTestUrl : customServerUrl;
+
+        if (!TryBuildFrameUrl(requestedUrl, frameKey + 1, run: true, isDarkTheme, out var nextUrl, out var error))
+        {
+            validationMessage = error;
+            return;
+        }
+
+        validationMessage = null;
+        frameKey++;
+        frameUrl = nextUrl;
+    }
+
+    private void ToggleTheme()
+    {
+        isDarkTheme = !isDarkTheme;
+        var requestedUrl = mode == SpeedTestMode.Managed ? ManagedSpeedTestUrl : customServerUrl;
+
+        if (TryBuildFrameUrl(requestedUrl, frameKey + 1, run: false, isDarkTheme, out var nextUrl, out _))
+        {
+            frameKey++;
+            frameUrl = nextUrl;
+        }
+    }
+
+    private string GetModeClass(SpeedTestMode targetMode)
+    {
+        return mode == targetMode ? "control-button active" : "control-button";
+    }
+
+    private static bool TryBuildFrameUrl(string rawUrl, int nonce, bool run, bool darkTheme, out string url, out string? error)
+    {
+        url = string.Empty;
+        error = null;
+
+        if (string.IsNullOrWhiteSpace(rawUrl))
+        {
+            error = "Enter an OpenSpeedTest server URL.";
+            return false;
+        }
+
+        var normalizedUrl = rawUrl.Trim();
+        if (!normalizedUrl.Contains("://", StringComparison.Ordinal))
+        {
+            normalizedUrl = $"http://{normalizedUrl}";
+        }
+
+        if (!Uri.TryCreate(normalizedUrl, UriKind.Absolute, out var uri) ||
+            (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            error = "Use a valid http or https URL.";
+            return false;
+        }
+
+        url = BuildFrameUrl(uri.ToString(), nonce, run, darkTheme);
+        return true;
+    }
+
+    private static string BuildFrameUrl(string baseUrl, int nonce, bool run, bool darkTheme)
+    {
+        var builder = new UriBuilder(baseUrl);
+        var existingQuery = builder.Query.TrimStart('?');
+        var query = string.IsNullOrWhiteSpace(existingQuery) ? string.Empty : $"{existingQuery}&";
+        var runQuery = run ? "Run=1&" : string.Empty;
+        builder.Query = $"{query}{runQuery}pocRefresh={nonce}&pocTheme={(darkTheme ? "dark" : "light")}";
+
+        return builder.Uri.ToString();
+    }
+}

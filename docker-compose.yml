@@ -1,0 +1,15 @@
+services:
+  openspeedtest:
+    image: openspeedtest/latest
+    container_name: openspeedtest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    volumes:
+      - ./docker-overrides/index.html:/usr/share/nginx/html/index.html:ro
+      - ./docker-overrides/ost-app.css:/usr/share/nginx/html/assets/css/app.css:ro
+      - ./docker-overrides/darkmode.css:/usr/share/nginx/html/assets/css/darkmode.css:ro
+      - ./docker-overrides/darkmode.js:/usr/share/nginx/html/assets/js/darkmode.js:ro
+      - ./docker-overrides/app.svg:/usr/share/nginx/html/assets/images/app.svg:ro
+      - ./docker-overrides/app-2.5.4.js:/usr/share/nginx/html/assets/js/app-2.5.4.js:ro
